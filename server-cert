@@ -1,0 +1,68 @@
+#!/bin/bash
+
+RED='\033[31m'
+MAGENTA='\033[35m'
+NC='\033[0m'
+
+# Query user for server name and generate private key for the server certificate.
+
+echo
+echo -e $MAGENTA"Enter a server name for the generated file (ex. srv01):"
+read serverName
+
+key=$serverName.key.pem
+
+openssl genrsa -out $HOME/ca/private/$key 2048
+chmod 400 $HOME/ca/private/$key
+echo
+echo "Private key generated and saved as:"
+echo -e $NC"$HOME/ca/private/$key"
+echo -e $MAGENTA"Moving on to Certificate Signing Request."
+echo
+
+
+# Generate the CSR using the key we've just generated.
+
+csr=$serverName.cert.pem
+
+echo "Enter domain name:"
+read domainName
+echo "Enter IP:"
+read ip
+
+echo
+echo "You will now fill out the pertinent information for the CSR. The common name must be the same as the domain name you just set."
+echo -e $NC
+
+sleep 3
+
+openssl req -config $HOME/ca/openssl.cnf -key $HOME/ca/private/$key -new -sha256 -out $HOME/ca/csr/$csr -addext "subjectAltName = DNS:$domainName,DNS:$ip"
+
+echo
+echo -e $MAGENTA"CSR generated and saved as $HOME/ca/csr/$csr. Moving on to certificate."
+echo -e $NC
+
+
+# Generate the server certificate and verify that it's okay.
+
+cert=$serverName.cert.pem
+
+openssl ca -config $HOME/ca/openssl.cnf -extensions server_cert -days 365000 -notext -md sha256 -in $HOME/ca/csr/$csr -out $HOME/ca/certs/$cert
+if [ $? -eq 0 ]; then
+        chmod 444 $HOME/ca/certs/$cert &&
+        openssl x509 -noout -text -in ~/ca/certs/$cert &&
+        echo &&
+        echo -e $MAGENTA"Cert generated and verified, saved as:"
+        echo -e $NC"$HOME/ca/certs/$cert"
+        echo -e $MAGENTA"Congratulations!" &&
+        echo "
+                         _G-wop_
+                         [ - - ]
+                          \ - /
+        "
+
+else
+        echo &&
+        echo -e $RED"Oh no, something went wrong! Did you deny signing of the cert or writing to log?" &&
+        echo -e $NC
+fi
