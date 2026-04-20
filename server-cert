@@ -50,7 +50,7 @@ cert=$serverName.cert.pem
 openssl ca -config $HOME/ca/openssl.cnf -extensions server_cert -days 365000 -notext -md sha256 -in $HOME/ca/csr/$csr -out $HOME/ca/certs/$cert
 if [ $? -eq 0 ]; then
         chmod 444 $HOME/ca/certs/$cert &&
-        openssl x509 -noout -text -in ~/ca/certs/$cert &&
+        openssl x509 -noout -text -in $HOME/ca/certs/$cert &&
         echo &&
         echo -e $MAGENTA"Cert generated and verified, saved as:"
         echo -e $NC"$HOME/ca/certs/$cert"
